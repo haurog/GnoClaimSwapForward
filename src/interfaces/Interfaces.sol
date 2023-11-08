@@ -8,12 +8,12 @@ contract NCTContract {
     uint256 public feeRedeemPercentageInBase;
 }
 
-/// GBCDepositContract is defined here as a contract to be able to access public variables
-contract GBCDepositContract {
+/// GBCDepositContractVariables is defined here as a contract to be able to access public variables
+contract GBCDepositContractVariables {
     mapping(address => uint256) public withdrawableAmount;
 }
 
-/// GBCDepositContract is defined here as an interface to be able to access public mbembers
-interface IGBCDepositContract {
+/// GBCDepositContract is defined here as an interface to be able to access public functions
+interface GBCDepositContract {
     function claimWithdrawal(address _address) external;
 }
