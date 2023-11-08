@@ -2,9 +2,12 @@
 pragma solidity ^0.8.13;
 
 import "./interfaces/Interfaces.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "forge-std/console.sol";
 
 contract ClaimForward {
+    using SafeERC20 for IERC20;
+
     address private GBCDepositContractAddress =
         0x0B98057eA310F4d31F2a452B414647007d1645d9;
     address private GNOTokenAddress =
