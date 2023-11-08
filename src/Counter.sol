@@ -5,15 +5,6 @@ import "./interfaces/Interfaces.sol";
 import "forge-std/console.sol";
 
 contract Counter {
-    uint256 public number;
-
-    function setNumber(uint256 newNumber) public {
-        number = newNumber;
-    }
-
-    function increment() public {
-        number++;
-    }
 
     address private GBCDepositContractAddress =
         0x0B98057eA310F4d31F2a452B414647007d1645d9;

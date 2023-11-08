@@ -13,25 +13,6 @@ contract CounterTest is Test {
         gnosisFork = vm.createFork('https://rpc.gnosis.gateway.fm');
         vm.selectFork(gnosisFork);
         counter = new Counter();
-        counter.setNumber(0);
-    }
-
-    function test_Increment() public {
-        counter.increment();
-        assertEq(counter.number(), 1);
-    }
-
-    function test_Increment_NonZero() public {
-        uint256 number = 532;
-        counter.setNumber(number);
-        assertEq(counter.number(), number);
-        counter.increment();
-        assertEq(counter.number(), number+1);
-    }
-
-    function testFuzz_SetNumber(uint256 x) public {
-        counter.setNumber(x);
-        assertEq(counter.number(), x);
     }
 
     function test_withdrawableAmount() public {
