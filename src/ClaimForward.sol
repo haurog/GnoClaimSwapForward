@@ -11,7 +11,9 @@ contract ClaimForward {
     address private GBCDepositContractAddress =
         0x0B98057eA310F4d31F2a452B414647007d1645d9;
     address private GNOTokenAddress =
-         0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
+        0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
+    address private destinationAddress =
+        0xAeC36E243159FC601140Db90da6961133630f15D;  // Gnosis pay wallet
 
     GBCDepositContract depositContract =
         GBCDepositContract(GBCDepositContractAddress);
@@ -28,10 +30,10 @@ contract ClaimForward {
         depositContract.claimWithdrawal(claimAddress);
     }
 
-    // function claimAndForward(address claimAddress) public {
-    //     uint256 amount = getWithdrawableAmount(claimAddress);
-    //     claimWithdrawal(claimAddress);
-    //     IERC20(GNOAddress).transfer(destinationAddress, amount);
+    function claimAndForward(address claimAddress) public {
+        uint256 amount = getWithdrawableAmount(claimAddress);
+        claimWithdrawal(claimAddress);
+        IERC20(GNOTokenAddress).transfer(destinationAddress, amount);
 
-    // }
+    }
 }
