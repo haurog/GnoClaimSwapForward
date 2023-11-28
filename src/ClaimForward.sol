@@ -31,9 +31,8 @@ contract ClaimForward {
     }
 
     function claimAndForward(address claimAddress) public {
-        uint256 amount = getWithdrawableAmount(claimAddress);
+        uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
         claimWithdrawal(claimAddress);
-        IERC20(GNOTokenAddress).transfer(destinationAddress, amount);
-
+        IERC20(GNOTokenAddress).transferFrom(claimAddress, destinationAddress, withdrawableAmount);
     }
 }
