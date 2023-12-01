@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "./interfaces/Interfaces.sol";
 // import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IVault.sol";
+import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IAsset.sol";
 
 
 import "forge-std/console.sol";
@@ -13,10 +14,16 @@ contract ClaimForward {
 
     IVault.BatchSwapStep[] batchSwapSteps;
 
+    address[] assets = [
+	0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb, // GNO
+	0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6, // wstETH
+	0xaf204776c7245bF4147c2612BF6e5972Ee483701, // sDAI
+	0xcB444e90D8198415266c6a2724b7900fb12FC56E  // EURe
+    ];
+
     address private GBCDepositContractAddress =
         0x0B98057eA310F4d31F2a452B414647007d1645d9;
-    address private GNOTokenAddress =
-        0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
+    address private GNOTokenAddress = assets[0];
     address private destinationAddress =
         0xAeC36E243159FC601140Db90da6961133630f15D;  // Gnosis pay wallet
 
