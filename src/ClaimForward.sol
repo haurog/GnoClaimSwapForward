@@ -11,15 +11,6 @@ import "forge-std/console.sol";
 contract ClaimForward {
 	// using SafeERC20 for IERC20;
 
-	// IVault.BatchSwapStep[] batchSwapSteps;
-
-	// address[] assets = [
-	// 0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb, // GNO
-	// 0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6, // wstETH
-	// 0xaf204776c7245bF4147c2612BF6e5972Ee483701, // sDAI
-	// 0xcB444e90D8198415266c6a2724b7900fb12FC56E  // EURe
-	// ];
-
 	address private gbcDepositContractAddress = 0x0B98057eA310F4d31F2a452B414647007d1645d9;
 	address private gnoTokenAddress = 0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
 	address private wxdaiTokenAddress = 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d;
