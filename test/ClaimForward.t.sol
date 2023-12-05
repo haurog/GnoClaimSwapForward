@@ -12,10 +12,12 @@ contract ClaimForwardTest is Test {
 	address claimAddress = 0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1;
 	address gnoTokenAddress = 0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
 	address wxdaiTokenAddress = 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d;
+    address eureTokenAddress = 0xcB444e90D8198415266c6a2724b7900fb12FC56E;
 	address destinationAddress = 0xAeC36E243159FC601140Db90da6961133630f15D; // Gnosis pay wallet
 
 	function setUp() public {
-		gnosisFork = vm.createFork("https://rpc.gnosis.gateway.fm");
+		// gnosisFork = vm.createFork("https://rpc.gnosis.gateway.fm");
+		gnosisFork = vm.createFork("http://192.168.1.123:8545");
 		vm.selectFork(gnosisFork);
 		claimForward = new ClaimForward();
 	}
@@ -56,6 +58,7 @@ contract ClaimForwardTest is Test {
 	function test_claimandSwap() public {
 		address claimForwardAddress = address(claimForward);
         uint256 wxdaiAmountBefore = IERC20(wxdaiTokenAddress).balanceOf(claimForwardAddress);
+        uint256 eureAmountBefore = IERC20(eureTokenAddress).balanceOf(destinationAddress);
         uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
 
 		// Set allowance
@@ -90,5 +93,14 @@ contract ClaimForwardTest is Test {
         emit log_named_uint("wxdaiAmountAfter", wxdaiAmountAfter);
         emit log_named_uint("wxdaiDifference", wxdaiDifference);
 		assert(wxdaiDifference > 0);
+
+        claimForward.curveSwapWxdaiEure(wxdaiDifference);
+        uint256 eureAmountAfter= IERC20(eureTokenAddress).balanceOf(destinationAddress);
+        uint256 eureDifference = eureAmountAfter - eureAmountBefore;
+        emit log_named_uint("eureAmountBefore", eureAmountBefore);
+        emit log_named_uint("eureAmountAfter", eureAmountAfter);
+        emit log_named_uint("eureDifference", eureDifference);
+        assert(eureDifference > 0);
+
 	}
 }

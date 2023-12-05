@@ -33,6 +33,11 @@ contract ClaimForward {
 		IERC20(gnoTokenAddress).transferFrom(from, to, amount);
 	}
 
+	function transferAllEureToDestination() public {
+		uint256 amount = IERC20(eureTokenAddress).balanceOf(address(this));
+		IERC20(eureTokenAddress).transfer(destinationAddress, amount);
+	}
+
 	function claimAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
@@ -67,5 +72,18 @@ contract ClaimForward {
 
 		uint256 minReceive = 0; // TODO: Can be sandwiched to oblivion.
 		vaultContract.swap(singleSwapStruct, fundsManagementStruct, minReceive, block.timestamp);
+	}
+
+	function curveSwapWxdaiEure(uint256 wxdaiAmount) public {
+		address curveAddress = 0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6;
+		Curve curveContract = Curve(curveAddress);
+
+		uint256 minReceive = 0; // TODO: Can be sandwiched to oblivion.
+		IERC20(wxdaiTokenAddress).approve(curveAddress, wxdaiAmount);
+		// Pool tokens 0=EURe, 1=wxDAI, 2=USDC,3=USDT
+		uint inTokenIndex = 1; // wxDAI
+		uint outTokenIndex = 0; // EURe
+		curveContract.exchange_underlying(inTokenIndex, outTokenIndex, wxdaiAmount, minReceive);
+		transferAllEureToDestination();
 	}
 }

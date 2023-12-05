@@ -17,3 +17,9 @@ contract GBCDepositContractVariables {
 interface GBCDepositContract {
     function claimWithdrawal(address _address) external;
 }
+
+
+interface Curve {
+    // some interfaces claim the i and j input to be int128, but they are uint256
+    function exchange_underlying(uint256 i, uint256 j, uint256 dx, uint256 min_dy) external;
+}
