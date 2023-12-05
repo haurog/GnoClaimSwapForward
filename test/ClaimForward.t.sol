@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {ClaimForward} from "../src/ClaimForward.sol";
+import { Test, console2 } from "forge-std/Test.sol";
+import { ClaimForward } from "../src/ClaimForward.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ClaimForwardTest is Test {
-    uint256 gnosisFork;
-    ClaimForward public claimForward;
+	uint256 gnosisFork;
+	ClaimForward public claimForward;
 
-    address claimAddress = 0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1;
-    address gnoTokenAddress = 0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
-    address destinationAddress = 0xAeC36E243159FC601140Db90da6961133630f15D;  // Gnosis pay wallet
+	address claimAddress = 0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1;
+	address gnoTokenAddress = 0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
+	address wxdaiTokenAddress = 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d;
+	address destinationAddress = 0xAeC36E243159FC601140Db90da6961133630f15D; // Gnosis pay wallet
 
-    function setUp() public {
-        gnosisFork = vm.createFork('https://rpc.gnosis.gateway.fm');
-        vm.selectFork(gnosisFork);
-        claimForward = new ClaimForward();
-    }
+	function setUp() public {
+		gnosisFork = vm.createFork("https://rpc.gnosis.gateway.fm");
+		vm.selectFork(gnosisFork);
+		claimForward = new ClaimForward();
+	}
 
 	function test_claimWithdrawal() public {
 	    uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
@@ -50,5 +51,44 @@ contract ClaimForwardTest is Test {
 		uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
 		uint difference = amountAfter - amountBefore;
 		assertEq(difference, withdrawableAmount);
+	}
+
+	function test_claimandSwap() public {
+		address claimForwardAddress = address(claimForward);
+        uint256 wxdaiAmountBefore = IERC20(wxdaiTokenAddress).balanceOf(claimForwardAddress);
+        uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
+
+		// Set allowance
+		vm.startPrank(claimAddress);
+		IERC20(gnoTokenAddress).approve(claimForwardAddress, withdrawableAmount);
+		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
+			claimAddress,
+			claimForwardAddress
+		);
+		vm.stopPrank();
+
+		assertEq(withdrawableAmount, allowanceAmount);
+
+		emit log_named_uint("withdrawableAmount", withdrawableAmount);
+		emit log_named_uint("allowanceAmount", allowanceAmount);
+
+		uint256 gnoAmountBeforeReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress);
+		claimForward.claimWithdrawal(claimAddress);
+		uint256 gnoAmountReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress) -
+			gnoAmountBeforeReceived;
+		emit log_named_uint("gnoAmountReceived", gnoAmountReceived);
+        claimForward.transferGNO(claimAddress, claimForwardAddress, withdrawableAmount);
+		uint256 gnoAmountForwarded = IERC20(gnoTokenAddress).balanceOf(claimForwardAddress);
+		emit log_named_uint("gnoAmountForwarded", gnoAmountForwarded);
+		assertEq(gnoAmountReceived, withdrawableAmount);
+
+		claimForward.swap(withdrawableAmount);
+
+		uint256 wxdaiAmountAfter = IERC20(wxdaiTokenAddress).balanceOf(claimForwardAddress);
+		uint256 wxdaiDifference = wxdaiAmountAfter - wxdaiAmountBefore;
+        emit log_named_uint("wxdaiAmountBefore", wxdaiAmountBefore);
+        emit log_named_uint("wxdaiAmountAfter", wxdaiAmountAfter);
+        emit log_named_uint("wxdaiDifference", wxdaiDifference);
+		assert(wxdaiDifference > 0);
 	}
 }
