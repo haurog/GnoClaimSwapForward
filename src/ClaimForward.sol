@@ -21,7 +21,6 @@ contract ClaimForward {
 	GBCDepositContractVariables depositContractVariables =
 		GBCDepositContractVariables(gbcDepositContractAddress);
 
-
 	function claimSwapAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
