@@ -21,6 +21,18 @@ contract ClaimForward {
 	GBCDepositContractVariables depositContractVariables =
 		GBCDepositContractVariables(gbcDepositContractAddress);
 
+
+	function claimSwapAndForward(address claimAddress) public {
+		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
+		claimWithdrawal(claimAddress);
+		transferGNO(claimAddress, address(this), withdrawableAmount);
+		balancerSwapGnoToWxdai(withdrawableAmount);
+
+		uint256 wxdaiAmount = IERC20(wxdaiTokenAddress).balanceOf(address(this));
+		curveSwapWxdaiEure(wxdaiAmount);
+		transferAllEureToDestination();
+	}
+
 	function getWithdrawableAmount(address claimAddress) public view returns (uint256) {
 		return depositContractVariables.withdrawableAmount(claimAddress);
 	}
@@ -29,22 +41,13 @@ contract ClaimForward {
 		depositContract.claimWithdrawal(claimAddress);
 	}
 
-	function transferGNO(address from, address to, uint256 amount) public {
-		IERC20(gnoTokenAddress).transferFrom(from, to, amount);
-	}
-
-	function transferAllEureToDestination() public {
-		uint256 amount = IERC20(eureTokenAddress).balanceOf(address(this));
-		IERC20(eureTokenAddress).transfer(destinationAddress, amount);
-	}
-
 	function claimAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
 		transferGNO(claimAddress, destinationAddress, withdrawableAmount);
 	}
 
-	function swap(uint256 withdrawableAmount) public {
+	function balancerSwapGnoToWxdai(uint256 withdrawableAmount) public {
 		address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
 		IVault vaultContract = IVault(vaultAddress);
@@ -84,6 +87,14 @@ contract ClaimForward {
 		uint inTokenIndex = 1; // wxDAI
 		uint outTokenIndex = 0; // EURe
 		curveContract.exchange_underlying(inTokenIndex, outTokenIndex, wxdaiAmount, minReceive);
-		transferAllEureToDestination();
+	}
+
+	function transferGNO(address from, address to, uint256 amount) public {
+		IERC20(gnoTokenAddress).transferFrom(from, to, amount);
+	}
+
+	function transferAllEureToDestination() public {
+		uint256 amount = IERC20(eureTokenAddress).balanceOf(address(this));
+		IERC20(eureTokenAddress).transfer(destinationAddress, amount);
 	}
 }
