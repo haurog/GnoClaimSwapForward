@@ -19,31 +19,36 @@ contract ClaimForwardTest is Test {
         claimForward = new ClaimForward();
     }
 
-    // function test_withdrawableAmount() public {
-    //     uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
-    //     assertEq(withdrawableAmount, 58958968156250000);
-    // }
+	function test_claimWithdrawal() public {
+	    uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
+        uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(claimAddress);
+        claimForward.claimWithdrawal(claimAddress);
+        uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(claimAddress);
+	    assertEq(amountAfter-amountBefore, withdrawableAmount);
+	}
 
-    function test_claimAndForward() public {
-        address bob = address(claimAddress);
-        address claimForwardAddress = address(claimForward);
+	function test_claimAndForward() public {
+		address claimForwardAddress = address(claimForward);
 
-        uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
-        uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
+		uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
+        emit log_named_uint("withdrawableAmount", withdrawableAmount);
+		uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
 
-        // Set allowance
-        vm.startPrank(bob);
-        IERC20(gnoTokenAddress).approve(claimForwardAddress, withdrawableAmount);
-        uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(claimAddress, claimForwardAddress);
-        vm.stopPrank();
+		// Set allowance
+		vm.startPrank(claimAddress);
+		IERC20(gnoTokenAddress).approve(claimForwardAddress, withdrawableAmount);
+		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
+			claimAddress,
+			claimForwardAddress
+		);
+		vm.stopPrank();
 
-        assertEq(withdrawableAmount, allowanceAmount);
+		assertEq(withdrawableAmount, allowanceAmount);
 
-        claimForward.claimAndForward(claimAddress);
+		claimForward.claimAndForward(claimAddress);
 
-        uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
-        uint difference = amountAfter - amountBefore;
-        assertEq(difference, withdrawableAmount);
-
-    }
+		uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
+		uint difference = amountAfter - amountBefore;
+		assertEq(difference, withdrawableAmount);
+	}
 }

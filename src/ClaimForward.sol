@@ -40,16 +40,19 @@ contract ClaimForward {
         return depositContractVariables.withdrawableAmount(claimAddress);
     }
 
-    function claimWithdrawal(address claimAddress) public {
-        depositContract.claimWithdrawal(claimAddress);
-    }
+	function claimWithdrawal(address claimAddress) public {
+		depositContract.claimWithdrawal(claimAddress);
+	}
 
-    function claimAndForward(address claimAddress) public {
-        uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
-        claimWithdrawal(claimAddress);
-        IERC20(GNOTokenAddress).transferFrom(claimAddress, destinationAddress, withdrawableAmount);
-    }
+	function transferGNO(address from, address to, uint256 amount) public {
+		IERC20(gnoTokenAddress).transferFrom(from, to, amount);
+	}
 
+	function claimAndForward(address claimAddress) public {
+		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
+		claimWithdrawal(claimAddress);
+		transferGNO(claimAddress, destinationAddress, withdrawableAmount);
+	}
 
     function swap(uint256 withdrawableAmount) public {
 
