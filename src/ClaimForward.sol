@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.21;
 
 import "./interfaces/Interfaces.sol";
 // import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -7,6 +7,12 @@ import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IVault.sol";
 import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IAsset.sol";
 
 import "forge-std/console.sol";
+
+/// @title Gnosis validator claim swap forward
+/// @author haurog
+/// @notice This contract claims my validator rewards, swaps them to EURe and forwards
+/// them to my gnosis pay wallet. The contract needs to have GNO allowance from the
+/// claim address, otherwise it cannot swap and forward the funds.
 
 contract ClaimForward {
 	// using SafeERC20 for IERC20;
@@ -21,6 +27,8 @@ contract ClaimForward {
 	GBCDepositContractVariables depositContractVariables =
 		GBCDepositContractVariables(gbcDepositContractAddress);
 
+    /// @notice This is the main functionality. Which does everything (claim, swap and forward).
+    /// @param claimAddress address for which to claim .
 	function claimSwapAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
@@ -32,22 +40,29 @@ contract ClaimForward {
 		transferAllEureToDestination();
 	}
 
+    /// @notice Helper function to know how much GNO can be claimed for the claimAddress.
+    /// @param claimAddress address for which to claim.
 	function getWithdrawableAmount(address claimAddress) public view returns (uint256) {
 		return depositContractVariables.withdrawableAmount(claimAddress);
 	}
 
+    /// @notice Claim the rewards.
+    /// @param claimAddress address for which to claim.
 	function claimWithdrawal(address claimAddress) public {
 		depositContract.claimWithdrawal(claimAddress);
 	}
 
+    /// @notice Claim and forward the rewards as GNO, without swapping.
+    /// @param claimAddress address for which to claim.
 	function claimAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
 		IERC20(gnoTokenAddress).transferFrom(claimAddress, destinationAddress, withdrawableAmount);
-
 	}
 
-	function balancerSwapGnoToWxdai(uint256 withdrawableAmount) public {
+    /// @notice First swap step from GNO to wxDAI using balancer. Only public to run tests.
+    /// @param gnoAmount amount of GNO to swap.
+	function balancerSwapGnoToWxdai(uint256 gnoAmount) public {
 		address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
 		IVault vaultContract = IVault(vaultAddress);
@@ -59,7 +74,7 @@ contract ClaimForward {
 			kind: kind,
 			assetIn: IAsset(address(gnoTokenAddress)),
 			assetOut: IAsset(address(wxdaiTokenAddress)),
-			amount: withdrawableAmount,
+			amount: gnoAmount,
 			userData: ""
 		});
 
@@ -71,12 +86,14 @@ contract ClaimForward {
 		});
 
 		// Set allowance for balancer contract
-		IERC20(gnoTokenAddress).approve(vaultAddress, withdrawableAmount);
+		IERC20(gnoTokenAddress).approve(vaultAddress, gnoAmount);
 
 		uint256 minReceive = 0; // TODO: Can be sandwiched to oblivion.
 		vaultContract.swap(singleSwapStruct, fundsManagementStruct, minReceive, block.timestamp);
 	}
 
+    /// @notice Second swap step from wxDAI to EURe using curve. Only public to run tests.
+    /// @param wxdaiAmount amount of wxDAI to swap.
 	function curveSwapWxdaiEure(uint256 wxdaiAmount) public {
 		address curveAddress = 0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6;
 		Curve curveContract = Curve(curveAddress);
@@ -89,7 +106,8 @@ contract ClaimForward {
 		curveContract.exchange_underlying(inTokenIndex, outTokenIndex, wxdaiAmount, minReceive);
 	}
 
-	function transferAllEureToDestination() public {
+    /// @notice Transfer all the EURe in this contract to the destination address.
+	function transferAllEureToDestination() private {
 		uint256 amount = IERC20(eureTokenAddress).balanceOf(address(this));
 		IERC20(eureTokenAddress).transfer(destinationAddress, amount);
 	}
