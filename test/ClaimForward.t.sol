@@ -80,7 +80,9 @@ contract ClaimForwardTest is Test {
 		uint256 gnoAmountReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress) -
 			gnoAmountBeforeReceived;
 		emit log_named_uint("gnoAmountReceived", gnoAmountReceived);
-        claimForward.transferGNO(claimAddress, claimForwardAddress, withdrawableAmount);
+		vm.startPrank(claimForwardAddress);
+        IERC20(gnoTokenAddress).transferFrom(claimAddress, claimForwardAddress, withdrawableAmount);
+        vm.stopPrank();
 		uint256 gnoAmountForwarded = IERC20(gnoTokenAddress).balanceOf(claimForwardAddress);
 		emit log_named_uint("gnoAmountForwarded", gnoAmountForwarded);
 		assertEq(gnoAmountReceived, withdrawableAmount);

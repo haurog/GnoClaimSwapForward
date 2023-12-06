@@ -24,7 +24,7 @@ contract ClaimForward {
 	function claimSwapAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
-		transferGNO(claimAddress, address(this), withdrawableAmount);
+		IERC20(gnoTokenAddress).transferFrom(claimAddress, address(this), withdrawableAmount);
 		balancerSwapGnoToWxdai(withdrawableAmount);
 
 		uint256 wxdaiAmount = IERC20(wxdaiTokenAddress).balanceOf(address(this));
@@ -43,7 +43,8 @@ contract ClaimForward {
 	function claimAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
-		transferGNO(claimAddress, destinationAddress, withdrawableAmount);
+		IERC20(gnoTokenAddress).transferFrom(claimAddress, destinationAddress, withdrawableAmount);
+
 	}
 
 	function balancerSwapGnoToWxdai(uint256 withdrawableAmount) public {
@@ -86,10 +87,6 @@ contract ClaimForward {
 		uint inTokenIndex = 1; // wxDAI
 		uint outTokenIndex = 0; // EURe
 		curveContract.exchange_underlying(inTokenIndex, outTokenIndex, wxdaiAmount, minReceive);
-	}
-
-	function transferGNO(address from, address to, uint256 amount) public {
-		IERC20(gnoTokenAddress).transferFrom(from, to, amount);
 	}
 
 	function transferAllEureToDestination() public {
