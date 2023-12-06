@@ -1,6 +1,6 @@
 ## Claim Swap Forward on Gnosis chain
 
-This contract claims Gnosis staking rewards, swaps them for ETHe and forwards them to a user selected address, like a gnosis pay wallet. The goal is to use this contract to automate this process using PowerPools and recharge the gnosis pay wallet regularly with staking gains.
+This contract claims Gnosis staking rewards, swaps them for EURe and forwards them to a user selected address, like a gnosis pay wallet. The goal is to use this contract to automate this process using PowerPools and recharge the gnosis pay wallet regularly with staking gains. The contract uses balancer and curve to swap the claimed GNO to wxDAI and then the wxDAI to EURe. This route seems to be the cheapest and shortest from GNO-> EURe. At the moment the addresses are hard coded. The contract needs to be allowed to move GNO from the claimAddress.
 
 ### Build
 
