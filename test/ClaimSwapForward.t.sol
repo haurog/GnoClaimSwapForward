@@ -2,12 +2,12 @@
 pragma solidity ^0.8.13;
 
 import { Test, console2 } from "forge-std/Test.sol";
-import { ClaimForward } from "../src/ClaimForward.sol";
+import { ClaimSwapForward } from "../src/ClaimSwapForward.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract ClaimForwardTest is Test {
+contract ClaimSwapForwardTest is Test {
 	uint256 gnosisFork;
-	ClaimForward public claimForward;
+	ClaimSwapForward public claimSwapForward;
 
 	address claimAddress = 0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1;
 	address gnoTokenAddress = 0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
@@ -19,36 +19,36 @@ contract ClaimForwardTest is Test {
 		// gnosisFork = vm.createFork("https://rpc.gnosis.gateway.fm");
 		gnosisFork = vm.createFork("http://192.168.1.123:8545");
 		vm.selectFork(gnosisFork);
-		claimForward = new ClaimForward();
+		claimSwapForward = new ClaimSwapForward();
 	}
 
 	function test_claimWithdrawal() public {
-	    uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
+	    uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
         uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(claimAddress);
-        claimForward.claimWithdrawal(claimAddress);
+        claimSwapForward.claimWithdrawal(claimAddress);
         uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(claimAddress);
 	    assertEq(amountAfter-amountBefore, withdrawableAmount);
 	}
 
 	function test_claimAndForward() public {
-		address claimForwardAddress = address(claimForward);
+		address claimSwapForwardAddress = address(claimSwapForward);
 
-		uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
+		uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
         emit log_named_uint("withdrawableAmount", withdrawableAmount);
 		uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
 
 		// Set allowance
 		vm.startPrank(claimAddress);
-		IERC20(gnoTokenAddress).approve(claimForwardAddress, withdrawableAmount);
+		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount);
 		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
 			claimAddress,
-			claimForwardAddress
+			claimSwapForwardAddress
 		);
 		vm.stopPrank();
 
 		assertEq(withdrawableAmount, allowanceAmount);
 
-		claimForward.claimAndForward(claimAddress);
+		claimSwapForward.claimAndForward(claimAddress);
 
 		uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
 		uint difference = amountAfter - amountBefore;
@@ -56,17 +56,17 @@ contract ClaimForwardTest is Test {
 	}
 
 	function test_claimandSwap() public {
-		address claimForwardAddress = address(claimForward);
-        uint256 wxdaiAmountBefore = IERC20(wxdaiTokenAddress).balanceOf(claimForwardAddress);
-        uint256 eureAmountBefore = IERC20(eureTokenAddress).balanceOf(claimForwardAddress);
-        uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
+		address claimSwapForwardAddress = address(claimSwapForward);
+        uint256 wxdaiAmountBefore = IERC20(wxdaiTokenAddress).balanceOf(claimSwapForwardAddress);
+        uint256 eureAmountBefore = IERC20(eureTokenAddress).balanceOf(claimSwapForwardAddress);
+        uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
 
 		// Set allowance
 		vm.startPrank(claimAddress);
-		IERC20(gnoTokenAddress).approve(claimForwardAddress, withdrawableAmount);
+		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount);
 		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
 			claimAddress,
-			claimForwardAddress
+			claimSwapForwardAddress
 		);
 		vm.stopPrank();
 
@@ -76,28 +76,28 @@ contract ClaimForwardTest is Test {
 		emit log_named_uint("allowanceAmount", allowanceAmount);
 
 		uint256 gnoAmountBeforeReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress);
-		claimForward.claimWithdrawal(claimAddress);
+		claimSwapForward.claimWithdrawal(claimAddress);
 		uint256 gnoAmountReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress) -
 			gnoAmountBeforeReceived;
 		emit log_named_uint("gnoAmountReceived", gnoAmountReceived);
-		vm.startPrank(claimForwardAddress);
-        IERC20(gnoTokenAddress).transferFrom(claimAddress, claimForwardAddress, withdrawableAmount);
+		vm.startPrank(claimSwapForwardAddress);
+        IERC20(gnoTokenAddress).transferFrom(claimAddress, claimSwapForwardAddress, withdrawableAmount);
         vm.stopPrank();
-		uint256 gnoAmountForwarded = IERC20(gnoTokenAddress).balanceOf(claimForwardAddress);
+		uint256 gnoAmountForwarded = IERC20(gnoTokenAddress).balanceOf(claimSwapForwardAddress);
 		emit log_named_uint("gnoAmountForwarded", gnoAmountForwarded);
 		assertEq(gnoAmountReceived, withdrawableAmount);
 
-		claimForward.balancerSwapGnoToWxdai(withdrawableAmount);
+		claimSwapForward.balancerSwapGnoToWxdai(withdrawableAmount);
 
-		uint256 wxdaiAmountAfter = IERC20(wxdaiTokenAddress).balanceOf(claimForwardAddress);
+		uint256 wxdaiAmountAfter = IERC20(wxdaiTokenAddress).balanceOf(claimSwapForwardAddress);
 		uint256 wxdaiDifference = wxdaiAmountAfter - wxdaiAmountBefore;
         emit log_named_uint("wxdaiAmountBefore", wxdaiAmountBefore);
         emit log_named_uint("wxdaiAmountAfter", wxdaiAmountAfter);
         emit log_named_uint("wxdaiDifference", wxdaiDifference);
 		assert(wxdaiDifference > 0);
 
-        claimForward.curveSwapWxdaiEure(wxdaiDifference);
-        uint256 eureAmountAfter= IERC20(eureTokenAddress).balanceOf(claimForwardAddress);
+        claimSwapForward.curveSwapWxdaiEure(wxdaiDifference);
+        uint256 eureAmountAfter= IERC20(eureTokenAddress).balanceOf(claimSwapForwardAddress);
         uint256 eureDifference = eureAmountAfter - eureAmountBefore;
         emit log_named_uint("eureAmountBefore", eureAmountBefore);
         emit log_named_uint("eureAmountAfter", eureAmountAfter);
@@ -106,24 +106,24 @@ contract ClaimForwardTest is Test {
 	}
 
     function test_claimSwapAndForward() public {
-		address claimForwardAddress = address(claimForward);
+		address claimSwapForwardAddress = address(claimSwapForward);
         uint256 eureAmountBefore = IERC20(eureTokenAddress).balanceOf(destinationAddress);
 
 
 		// Set allowance
 		vm.startPrank(claimAddress);
-        uint256 withdrawableAmount = claimForward.getWithdrawableAmount(claimAddress);
-		IERC20(gnoTokenAddress).approve(claimForwardAddress, withdrawableAmount);
+        uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
+		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount);
 		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
 			claimAddress,
-			claimForwardAddress
+			claimSwapForwardAddress
 		);
 		vm.stopPrank();
 
 		assertEq(withdrawableAmount, allowanceAmount);
 
 
-        claimForward.claimSwapAndForward(claimAddress);
+        claimSwapForward.claimSwapAndForward(claimAddress);
         uint256 eureAmountAfter= IERC20(eureTokenAddress).balanceOf(destinationAddress);
         uint256 eureDifference = eureAmountAfter - eureAmountBefore;
         emit log_named_uint("eureAmountBefore", eureAmountBefore);

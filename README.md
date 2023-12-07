@@ -38,7 +38,7 @@ $ anvil
 
 ```shell
 $ forge create --rpc-url https://rpc.gnosischain.com --private-key <your_private_key> src/<YourContract>.sol:<YourContract>
-$ forge create --rpc-url https://rpc.gnosischain.com -ledger --mnemonic-derivation-path "m/44'/60'/2'/0/0"  --from 0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1 --verify src/ClaimForward.sol:ClaimForward
+$ forge create --rpc-url https://rpc.gnosischain.com -ledger --mnemonic-derivation-path "m/44'/60'/2'/0/0"  --from 0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1 --verify src/ClaimSwapForward.sol:ClaimSwapForward
 ```
 ### Verify (if the above step failed)
 
@@ -49,7 +49,7 @@ forge verify-contract \
     --etherscan-api-key <gnosisscan api key> \
     --compiler-version v0.8.21 \
     <deployed contract address> \
-    src/ClaimForward.sol:ClaimForward
+    src/ClaimSwapForward.sol:ClaimSwapForward
 ```
 
 ### Cast

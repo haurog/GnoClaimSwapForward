@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
 
-contract ClaimForwardScript is Script {
+contract ClaimSwapForwardScript is Script {
     function setUp() public {}
 
     function run() public {
