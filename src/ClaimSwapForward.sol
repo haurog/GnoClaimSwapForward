@@ -64,13 +64,19 @@ contract ClaimSwapForward {
     /// @param gnoAmount amount of GNO to swap.
 	function balancerSwapGnoToWxdai(uint256 gnoAmount) public {
 		address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-
 		IVault vaultContract = IVault(vaultAddress);
+		bytes32 poolId = 0xa99fd9950b5d5dceeaf4939e221dca8ca9b938ab000100000000000000000025;
+
+		// Poor mans in-block sandwich prevention. If the pool has been touched in the same block, revert.
+    	( , , uint256 lastChangeBlock, ) = vaultContract.getPoolTokenInfo(poolId, IERC20(gnoTokenAddress));
+		console.logUint(lastChangeBlock);
+		console.logUint(block.number);
+		require(lastChangeBlock < block.number, "Balancer pool has been used in this block already. Revert to prevent in-block sandwiching attacks.");
 
 		IVault.SwapKind kind = IVault.SwapKind.GIVEN_IN;
 
 		IVault.SingleSwap memory singleSwapStruct = IVault.SingleSwap({
-			poolId: 0xa99fd9950b5d5dceeaf4939e221dca8ca9b938ab000100000000000000000025,
+			poolId: poolId,
 			kind: kind,
 			assetIn: IAsset(address(gnoTokenAddress)),
 			assetOut: IAsset(address(wxdaiTokenAddress)),
@@ -88,7 +94,7 @@ contract ClaimSwapForward {
 		// Set allowance for balancer contract
 		IERC20(gnoTokenAddress).approve(vaultAddress, gnoAmount);
 
-		uint256 minReceive = 0; // TODO: Can be sandwiched to oblivion.
+		uint256 minReceive = 0;
 		vaultContract.swap(singleSwapStruct, fundsManagementStruct, minReceive, block.timestamp);
 	}
 
