@@ -69,8 +69,8 @@ contract ClaimSwapForward {
 
 		// Poor mans in-block sandwich prevention. If the pool has been touched in the same block, revert.
     	( , , uint256 lastChangeBlock, ) = vaultContract.getPoolTokenInfo(poolId, IERC20(gnoTokenAddress));
-		console.logUint(lastChangeBlock);
-		console.logUint(block.number);
+		// console.logUint(lastChangeBlock);
+		// console.logUint(block.number);
 		require(lastChangeBlock < block.number, "Balancer pool has been used in this block already. Revert to prevent in-block sandwiching attacks.");
 
 		IVault.SwapKind kind = IVault.SwapKind.GIVEN_IN;
