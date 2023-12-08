@@ -3,6 +3,8 @@ pragma solidity ^0.8.21;
 
 import "./interfaces/Interfaces.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 // import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IVault.sol";
 // import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IAsset.sol";
 
@@ -14,7 +16,7 @@ import "forge-std/console.sol";
 /// them to my gnosis pay wallet. The contract needs to have GNO allowance from the
 /// claim address, otherwise it cannot swap and forward the funds.
 
-contract ClaimSwapForward {
+contract ClaimSwapForward is Ownable {
 	// using SafeERC20 for IERC20;
 
 	address private gbcDepositContractAddress = 0x0B98057eA310F4d31F2a452B414647007d1645d9;
@@ -27,8 +29,10 @@ contract ClaimSwapForward {
 	GBCDepositContractVariables depositContractVariables =
 		GBCDepositContractVariables(gbcDepositContractAddress);
 
-    /// @notice This is the main functionality. Which does everything (claim, swap and forward).
-    /// @param claimAddress address for which to claim .
+	constructor() Ownable(msg.sender) {}
+
+	/// @notice This is the main functionality. Which does everything (claim, swap and forward).
+	/// @param claimAddress address for which to claim .
 	function claimSwapAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
@@ -40,28 +44,28 @@ contract ClaimSwapForward {
 		transferAllEureToDestination();
 	}
 
-    /// @notice Helper function to know how much GNO can be claimed for the claimAddress.
-    /// @param claimAddress address for which to claim.
+	/// @notice Helper function to know how much GNO can be claimed for the claimAddress.
+	/// @param claimAddress address for which to claim.
 	function getWithdrawableAmount(address claimAddress) public view returns (uint256) {
 		return depositContractVariables.withdrawableAmount(claimAddress);
 	}
 
-    /// @notice Claim the rewards.
-    /// @param claimAddress address for which to claim.
+	/// @notice Claim the rewards.
+	/// @param claimAddress address for which to claim.
 	function claimWithdrawal(address claimAddress) public {
 		depositContract.claimWithdrawal(claimAddress);
 	}
 
-    /// @notice Claim and forward the rewards as GNO, without swapping.
-    /// @param claimAddress address for which to claim.
+	/// @notice Claim and forward the rewards as GNO, without swapping.
+	/// @param claimAddress address for which to claim.
 	function claimAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		claimWithdrawal(claimAddress);
 		IERC20(gnoTokenAddress).transferFrom(claimAddress, destinationAddress, withdrawableAmount);
 	}
 
-    /// @notice First swap step from GNO to wxDAI using balancer. Only public to run tests.
-    /// @param gnoAmount amount of GNO to swap.
+	/// @notice First swap step from GNO to wxDAI using balancer. Only public to run tests.
+	/// @param gnoAmount amount of GNO to swap.
 	function balancerSwapGnoToWxdai(uint256 gnoAmount) public {
 		address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 		Balancer vaultContract = Balancer(vaultAddress);
@@ -69,10 +73,16 @@ contract ClaimSwapForward {
 
 		// Poor mans in-block sandwich prevention. If the pool has been touched in the same block, revert.
 		// There is about 1 balancer transaction per 100 blocks, so it has a 1% chance to give a false positive.
-    	( , , uint256 lastChangeBlock, ) = vaultContract.getPoolTokenInfo(poolId, IERC20(gnoTokenAddress));
+		(, , uint256 lastChangeBlock, ) = vaultContract.getPoolTokenInfo(
+			poolId,
+			IERC20(gnoTokenAddress)
+		);
 		// console.logUint(lastChangeBlock);
 		// console.logUint(block.number);
-		require(lastChangeBlock < block.number, "Balancer pool has been used in this block already. Revert to prevent in-block sandwiching attacks.");
+		require(
+			lastChangeBlock < block.number,
+			"Balancer pool has been used in this block already. Revert to prevent in-block sandwiching attacks."
+		);
 
 		Balancer.SwapKind kind = Balancer.SwapKind.GIVEN_IN;
 
@@ -99,14 +109,13 @@ contract ClaimSwapForward {
 		vaultContract.swap(singleSwapStruct, fundsManagementStruct, minReceive, block.timestamp);
 	}
 
-    /// @notice Second swap step from wxDAI to EURe using curve. Only public to run tests.
-    /// @param wxdaiAmount amount of wxDAI to swap.
+	/// @notice Second swap step from wxDAI to EURe using curve. Only public to run tests.
+	/// @param wxdaiAmount amount of wxDAI to swap.
 	function curveSwapWxdaiEure(uint256 wxdaiAmount) public {
 		address curveAddress = 0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6;
-		uint256 maxDifferenceAccepted = 990;  // = 0.990 =1 % difference between oracle price and received
+		uint256 maxDifferenceAccepted = 990; // = 0.990 =1 % difference between oracle price and received
 		Curve curveContract = Curve(curveAddress);
 		uint256 oraclePrice = curveContract.price_oracle(); // wxDAI you get for 1 EURe multiplied by 1e18
-
 
 		uint256 minReceive = 0; // TODO: Can be sandwiched to oblivion.
 		IERC20(wxdaiTokenAddress).approve(curveAddress, wxdaiAmount);
@@ -115,17 +124,21 @@ contract ClaimSwapForward {
 		uint outTokenIndex = 0; // EURe
 		curveContract.exchange_underlying(inTokenIndex, outTokenIndex, wxdaiAmount, minReceive);
 		uint256 eureReceived = IERC20(eureTokenAddress).balanceOf(address(this));
-		uint256 minimallyAcceptedEure = wxdaiAmount / (oraclePrice/1e15) * maxDifferenceAccepted;
+		uint256 minimallyAcceptedEure = (wxdaiAmount / (oraclePrice / 1e15)) *
+			maxDifferenceAccepted;
 
 		// console.logUint(oraclePrice);
 		// console.logUint(wxdaiAmount / (oraclePrice/1e15) * 1000);
 		// console.logUint(eureReceived);
 		// console.logUint(minimallyAcceptedEure);
 
-		require(eureReceived > minimallyAcceptedEure, "EURe amount received lower than expected from the oracle price. Revert to prevent sandwiching attacks.");
+		require(
+			eureReceived > minimallyAcceptedEure,
+			"EURe amount received lower than expected from the oracle price. Revert to prevent sandwiching attacks."
+		);
 	}
 
-    /// @notice Transfer all the EURe in this contract to the destination address.
+	/// @notice Transfer all the EURe in this contract to the destination address.
 	function transferAllEureToDestination() private {
 		uint256 amount = IERC20(eureTokenAddress).balanceOf(address(this));
 		IERC20(eureTokenAddress).transfer(destinationAddress, amount);
