@@ -2,9 +2,9 @@
 pragma solidity ^0.8.21;
 
 import "./interfaces/Interfaces.sol";
-// import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IVault.sol";
-import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IAsset.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IVault.sol";
+// import "balancer-v2-monorepo/pkg/interfaces/contracts/vault/IAsset.sol";
 
 import "forge-std/console.sol";
 
@@ -64,7 +64,7 @@ contract ClaimSwapForward {
     /// @param gnoAmount amount of GNO to swap.
 	function balancerSwapGnoToWxdai(uint256 gnoAmount) public {
 		address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-		IVault vaultContract = IVault(vaultAddress);
+		Balancer vaultContract = Balancer(vaultAddress);
 		bytes32 poolId = 0xa99fd9950b5d5dceeaf4939e221dca8ca9b938ab000100000000000000000025;
 
 		// Poor mans in-block sandwich prevention. If the pool has been touched in the same block, revert.
@@ -74,9 +74,9 @@ contract ClaimSwapForward {
 		// console.logUint(block.number);
 		require(lastChangeBlock < block.number, "Balancer pool has been used in this block already. Revert to prevent in-block sandwiching attacks.");
 
-		IVault.SwapKind kind = IVault.SwapKind.GIVEN_IN;
+		Balancer.SwapKind kind = Balancer.SwapKind.GIVEN_IN;
 
-		IVault.SingleSwap memory singleSwapStruct = IVault.SingleSwap({
+		Balancer.SingleSwap memory singleSwapStruct = Balancer.SingleSwap({
 			poolId: poolId,
 			kind: kind,
 			assetIn: IAsset(address(gnoTokenAddress)),
@@ -85,7 +85,7 @@ contract ClaimSwapForward {
 			userData: ""
 		});
 
-		IVault.FundManagement memory fundsManagementStruct = IVault.FundManagement({
+		Balancer.FundManagement memory fundsManagementStruct = Balancer.FundManagement({
 			sender: address(this),
 			fromInternalBalance: false,
 			recipient: payable(address(this)),
