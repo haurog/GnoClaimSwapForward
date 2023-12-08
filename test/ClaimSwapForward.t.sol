@@ -29,7 +29,26 @@ contract ClaimSwapForwardTest is Test {
 		assertEq(claimSwapForward.owner(), 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
 		claimSwapForward.transferOwnership(haurog);
 		assertEq(claimSwapForward.owner(), haurog);
+	}
 
+	function test_sandwichPreventionParameters() public {
+		// Balancer part
+		assertEq(claimSwapForward.balancerSandwichPrevention(), true);
+		claimSwapForward.changeBalancerSandwichPrevention(false);
+		assertEq(claimSwapForward.balancerSandwichPrevention(), false);
+		vm.startPrank(claimAddress);
+		vm.expectRevert();
+		claimSwapForward.changeBalancerSandwichPrevention(false);
+		vm.stopPrank();
+
+		// Curve Part
+		assertEq(claimSwapForward.curveMaxDiff()  , 990);
+		claimSwapForward.changeCurveMaxDiffSandwichPrevention(995);
+		assertEq(claimSwapForward.curveMaxDiff(), 995);
+		vm.startPrank(claimAddress);
+		vm.expectRevert();
+		claimSwapForward.changeCurveMaxDiffSandwichPrevention(990);
+		vm.stopPrank();
 	}
 
 	function test_claimWithdrawal() public {
