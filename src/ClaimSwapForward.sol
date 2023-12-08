@@ -103,7 +103,7 @@ contract ClaimSwapForward {
     /// @param wxdaiAmount amount of wxDAI to swap.
 	function curveSwapWxdaiEure(uint256 wxdaiAmount) public {
 		address curveAddress = 0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6;
-		uint256 maxDifferenceAccepted = 995;  // = 0.995 =0.5 % difference between oracle price and recieved
+		uint256 maxDifferenceAccepted = 990;  // = 0.990 =1 % difference between oracle price and received
 		Curve curveContract = Curve(curveAddress);
 		uint256 oraclePrice = curveContract.price_oracle(); // wxDAI you get for 1 EURe multiplied by 1e18
 
