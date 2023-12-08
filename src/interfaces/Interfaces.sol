@@ -22,4 +22,5 @@ interface GBCDepositContract {
 interface Curve {
     // some interfaces claim the i and j input to be int128, but they are uint256
     function exchange_underlying(uint256 i, uint256 j, uint256 dx, uint256 min_dy) external;
+    function price_oracle() external returns(uint256);
 }

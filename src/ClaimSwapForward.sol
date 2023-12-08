@@ -68,6 +68,7 @@ contract ClaimSwapForward {
 		bytes32 poolId = 0xa99fd9950b5d5dceeaf4939e221dca8ca9b938ab000100000000000000000025;
 
 		// Poor mans in-block sandwich prevention. If the pool has been touched in the same block, revert.
+		// There is about 1 balancer transaction per 100 blocks, so it has a 1% chance to give a false positive.
     	( , , uint256 lastChangeBlock, ) = vaultContract.getPoolTokenInfo(poolId, IERC20(gnoTokenAddress));
 		// console.logUint(lastChangeBlock);
 		// console.logUint(block.number);
@@ -102,7 +103,10 @@ contract ClaimSwapForward {
     /// @param wxdaiAmount amount of wxDAI to swap.
 	function curveSwapWxdaiEure(uint256 wxdaiAmount) public {
 		address curveAddress = 0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6;
+		uint256 maxDifferenceAccepted = 995;  // = 0.995 =0.5 % difference between oracle price and recieved
 		Curve curveContract = Curve(curveAddress);
+		uint256 oraclePrice = curveContract.price_oracle(); // wxDAI you get for 1 EURe multiplied by 1e18
+
 
 		uint256 minReceive = 0; // TODO: Can be sandwiched to oblivion.
 		IERC20(wxdaiTokenAddress).approve(curveAddress, wxdaiAmount);
@@ -110,6 +114,15 @@ contract ClaimSwapForward {
 		uint inTokenIndex = 1; // wxDAI
 		uint outTokenIndex = 0; // EURe
 		curveContract.exchange_underlying(inTokenIndex, outTokenIndex, wxdaiAmount, minReceive);
+		uint256 eureReceived = IERC20(eureTokenAddress).balanceOf(address(this));
+		uint256 minimallyAcceptedEure = wxdaiAmount / (oraclePrice/1e15) * maxDifferenceAccepted;
+
+		// console.logUint(oraclePrice);
+		// console.logUint(wxdaiAmount / (oraclePrice/1e15) * 1000);
+		// console.logUint(eureReceived);
+		// console.logUint(minimallyAcceptedEure);
+
+		require(eureReceived > minimallyAcceptedEure, "EURe amount received lower than expected from the oracle price. Revert to prevent sandwiching attacks.");
 	}
 
     /// @notice Transfer all the EURe in this contract to the destination address.
