@@ -25,10 +25,6 @@ contract ClaimSwapForward is Ownable {
 	address private eureTokenAddress = 0xcB444e90D8198415266c6a2724b7900fb12FC56E;
 	address private destinationAddress = 0xAeC36E243159FC601140Db90da6961133630f15D; // Gnosis pay wallet
 
-	GBCDepositContract depositContract = GBCDepositContract(gbcDepositContractAddress);
-	GBCDepositContractVariables depositContractVariables =
-		GBCDepositContractVariables(gbcDepositContractAddress);
-
 	constructor() Ownable(msg.sender) {}
 
 	/// @notice This is the main functionality. Which does everything (claim, swap and forward).
@@ -47,12 +43,16 @@ contract ClaimSwapForward is Ownable {
 	/// @notice Helper function to know how much GNO can be claimed for the claimAddress.
 	/// @param claimAddress address for which to claim.
 	function getWithdrawableAmount(address claimAddress) public view returns (uint256) {
+		GBCDepositContractVariables depositContractVariables = GBCDepositContractVariables(
+			gbcDepositContractAddress
+		);
 		return depositContractVariables.withdrawableAmount(claimAddress);
 	}
 
 	/// @notice Claim the rewards.
 	/// @param claimAddress address for which to claim.
 	function claimWithdrawal(address claimAddress) public {
+		GBCDepositContract depositContract = GBCDepositContract(gbcDepositContractAddress);
 		depositContract.claimWithdrawal(claimAddress);
 	}
 
