@@ -28,8 +28,12 @@ contract ClaimSwapForward is Ownable {
 	bool public balancerSandwichPrevention = true; // enable/disable sandich prevention for the balancer step
 	uint256 public curveMaxDiff = 990; // = 0.990 =1 % difference between oracle price and received: Sandwich Prevention.
 
-	event ClaimSwapAndForwarded(uint256 gnoAmountIn, uint256 wxDaiAmountOut, address claimAddress, address destinationAddress);
-
+	event ClaimSwapAndForwarded(
+		uint256 gnoAmountIn,
+		uint256 wxDaiAmountOut,
+		address claimAddress,
+		address destinationAddress
+	);
 
 	constructor() Ownable(msg.sender) {}
 
@@ -38,7 +42,10 @@ contract ClaimSwapForward is Ownable {
 	function claimSwapAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(claimAddress, address(this));
-		require(allowanceAmount >= withdrawableAmount, "Approval amount too low, cannot transfer GNO to contract to do the swap." );
+		require(
+			allowanceAmount >= withdrawableAmount,
+			"Approval amount too low, cannot transfer GNO to contract to do the swap."
+		);
 
 		claimWithdrawal(claimAddress);
 		IERC20(gnoTokenAddress).transferFrom(claimAddress, address(this), withdrawableAmount);
@@ -47,7 +54,12 @@ contract ClaimSwapForward is Ownable {
 		uint256 wxdaiAmount = IERC20(wxdaiTokenAddress).balanceOf(address(this));
 		curveSwapWxdaiEure(wxdaiAmount);
 		transferAllEureToDestination();
-		emit ClaimSwapAndForwarded(withdrawableAmount, wxdaiAmount,claimAddress, destinationAddress);
+		emit ClaimSwapAndForwarded(
+			withdrawableAmount,
+			wxdaiAmount,
+			claimAddress,
+			destinationAddress
+		);
 	}
 
 	/// @notice Helper function to know how much GNO can be claimed for the claimAddress.
@@ -59,24 +71,28 @@ contract ClaimSwapForward is Ownable {
 		return depositContractVariables.withdrawableAmount(claimAddress);
 	}
 
+	/// @notice Enable/disable balancer sandwich prevention
+	/// @param preventSandwiching true: sandwich prevention enabled in the balancer swap step
+	function changeBalancerSandwichPrevention(bool preventSandwiching) public onlyOwner {
+		balancerSandwichPrevention = preventSandwiching;
+	}
+
+	/// @notice Change the Maximal difference value in the curve swap sandwich prevention mechanism
+	/// @param maxDiffValue 1000 = only exact swaps oracle -> output EURe are ok. 995 = actual output can be 0.5% below oracle value
+	function changeCurveMaxDiffSandwichPrevention(uint256 maxDiffValue) public onlyOwner {
+		curveMaxDiff = maxDiffValue;
+	}
+
 	/// @notice Claim the rewards.
 	/// @param claimAddress address for which to claim.
-	function claimWithdrawal(address claimAddress) public {
+	function claimWithdrawal(address claimAddress) private {
 		GBCDepositContract depositContract = GBCDepositContract(gbcDepositContractAddress);
 		depositContract.claimWithdrawal(claimAddress);
 	}
 
-	/// @notice Claim and forward the rewards as GNO, without swapping.
-	/// @param claimAddress address for which to claim.
-	function claimAndForward(address claimAddress) public {
-		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
-		claimWithdrawal(claimAddress);
-		IERC20(gnoTokenAddress).transferFrom(claimAddress, destinationAddress, withdrawableAmount);
-	}
-
-	/// @notice First swap step from GNO to wxDAI using balancer. Only public to run tests.
+	/// @notice First swap step from GNO to wxDAI using balancer.
 	/// @param gnoAmount amount of GNO to swap.
-	function balancerSwapGnoToWxdai(uint256 gnoAmount) public {
+	function balancerSwapGnoToWxdai(uint256 gnoAmount) private {
 		address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 		Balancer vaultContract = Balancer(vaultAddress);
 		bytes32 poolId = 0xa99fd9950b5d5dceeaf4939e221dca8ca9b938ab000100000000000000000025;
@@ -122,9 +138,9 @@ contract ClaimSwapForward is Ownable {
 		vaultContract.swap(singleSwapStruct, fundsManagementStruct, minReceive, block.timestamp);
 	}
 
-	/// @notice Second swap step from wxDAI to EURe using curve. Only public to run tests.
+	/// @notice Second swap step from wxDAI to EURe using curve.
 	/// @param wxdaiAmount amount of wxDAI to swap.
-	function curveSwapWxdaiEure(uint256 wxdaiAmount) public {
+	function curveSwapWxdaiEure(uint256 wxdaiAmount) private {
 		address curveAddress = 0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6;
 		Curve curveContract = Curve(curveAddress);
 		uint256 oraclePrice = curveContract.price_oracle(); // wxDAI you get for 1 EURe multiplied by 1e18
@@ -153,17 +169,5 @@ contract ClaimSwapForward is Ownable {
 	function transferAllEureToDestination() private {
 		uint256 amount = IERC20(eureTokenAddress).balanceOf(address(this));
 		IERC20(eureTokenAddress).transfer(destinationAddress, amount);
-	}
-
-	/// @notice Enable/disable balancer sandwich prevention
-	/// @param preventSandwiching true: sandwich prevention enabled in the balancer swap step
-	function changeBalancerSandwichPrevention(bool preventSandwiching) public onlyOwner {
-		balancerSandwichPrevention = preventSandwiching;
-	}
-
-	/// @notice Change the Maximal difference value in the curve swap sandwich prevention mechanism
-	/// @param maxDiffValue 1000 = only exact swaps oracle -> output EURe are ok. 995 = actual output can be 0.5% below oracle value
-	function changeCurveMaxDiffSandwichPrevention(uint256 maxDiffValue) public onlyOwner {
-		curveMaxDiff = maxDiffValue;
 	}
 }

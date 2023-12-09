@@ -42,100 +42,13 @@ contract ClaimSwapForwardTest is Test {
 		vm.stopPrank();
 
 		// Curve Part
-		assertEq(claimSwapForward.curveMaxDiff()  , 990);
+		assertEq(claimSwapForward.curveMaxDiff(), 990);
 		claimSwapForward.changeCurveMaxDiffSandwichPrevention(995);
 		assertEq(claimSwapForward.curveMaxDiff(), 995);
 		vm.startPrank(claimAddress);
 		vm.expectRevert();
 		claimSwapForward.changeCurveMaxDiffSandwichPrevention(990);
 		vm.stopPrank();
-	}
-
-	function test_claimWithdrawal() public {
-		uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
-		uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(claimAddress);
-		claimSwapForward.claimWithdrawal(claimAddress);
-		uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(claimAddress);
-		assertEq(amountAfter - amountBefore, withdrawableAmount);
-	}
-
-	function test_claimAndForward() public {
-		address claimSwapForwardAddress = address(claimSwapForward);
-
-		uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
-		emit log_named_uint("withdrawableAmount", withdrawableAmount);
-		uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
-
-		// Set allowance
-		vm.startPrank(claimAddress);
-		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount);
-		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
-			claimAddress,
-			claimSwapForwardAddress
-		);
-		vm.stopPrank();
-
-		assertEq(withdrawableAmount, allowanceAmount);
-
-		claimSwapForward.claimAndForward(claimAddress);
-
-		uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
-		uint difference = amountAfter - amountBefore;
-		assertEq(difference, withdrawableAmount);
-	}
-
-	function test_claimandSwap() public {
-		address claimSwapForwardAddress = address(claimSwapForward);
-		uint256 wxdaiAmountBefore = IERC20(wxdaiTokenAddress).balanceOf(claimSwapForwardAddress);
-		uint256 eureAmountBefore = IERC20(eureTokenAddress).balanceOf(claimSwapForwardAddress);
-		uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
-
-		// Set allowance
-		vm.startPrank(claimAddress);
-		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount);
-		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
-			claimAddress,
-			claimSwapForwardAddress
-		);
-		vm.stopPrank();
-
-		assertEq(withdrawableAmount, allowanceAmount);
-
-		emit log_named_uint("withdrawableAmount", withdrawableAmount);
-		emit log_named_uint("allowanceAmount", allowanceAmount);
-
-		uint256 gnoAmountBeforeReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress);
-		claimSwapForward.claimWithdrawal(claimAddress);
-		uint256 gnoAmountReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress) -
-			gnoAmountBeforeReceived;
-		emit log_named_uint("gnoAmountReceived", gnoAmountReceived);
-		vm.startPrank(claimSwapForwardAddress);
-		IERC20(gnoTokenAddress).transferFrom(
-			claimAddress,
-			claimSwapForwardAddress,
-			withdrawableAmount
-		);
-		vm.stopPrank();
-		uint256 gnoAmountForwarded = IERC20(gnoTokenAddress).balanceOf(claimSwapForwardAddress);
-		emit log_named_uint("gnoAmountForwarded", gnoAmountForwarded);
-		assertEq(gnoAmountReceived, withdrawableAmount);
-
-		claimSwapForward.balancerSwapGnoToWxdai(withdrawableAmount);
-
-		uint256 wxdaiAmountAfter = IERC20(wxdaiTokenAddress).balanceOf(claimSwapForwardAddress);
-		uint256 wxdaiDifference = wxdaiAmountAfter - wxdaiAmountBefore;
-		emit log_named_uint("wxdaiAmountBefore", wxdaiAmountBefore);
-		emit log_named_uint("wxdaiAmountAfter", wxdaiAmountAfter);
-		emit log_named_uint("wxdaiDifference", wxdaiDifference);
-		assert(wxdaiDifference > 0);
-
-		claimSwapForward.curveSwapWxdaiEure(wxdaiDifference);
-		uint256 eureAmountAfter = IERC20(eureTokenAddress).balanceOf(claimSwapForwardAddress);
-		uint256 eureDifference = eureAmountAfter - eureAmountBefore;
-		emit log_named_uint("eureAmountBefore", eureAmountBefore);
-		emit log_named_uint("eureAmountAfter", eureAmountAfter);
-		emit log_named_uint("eureDifference", eureDifference);
-		assert(eureDifference > 0);
 	}
 
 	function test_claimSwapAndForward() public {
@@ -163,13 +76,13 @@ contract ClaimSwapForwardTest is Test {
 		assert(eureDifference > 0);
 	}
 
-		function test_claimSwapAndForwardRevert() public {
+	function test_claimSwapAndForwardRevert() public {
 		address claimSwapForwardAddress = address(claimSwapForward);
 
 		// Set allowance
 		vm.startPrank(claimAddress);
 		uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
-		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount-100);
+		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount - 100);
 		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
 			claimAddress,
 			claimSwapForwardAddress
@@ -181,4 +94,91 @@ contract ClaimSwapForwardTest is Test {
 		vm.expectRevert();
 		claimSwapForward.claimSwapAndForward(claimAddress);
 	}
+
+	// function test_claimWithdrawal() public {
+	// 	uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
+	// 	uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(claimAddress);
+	// 	claimSwapForward.claimWithdrawal(claimAddress);
+	// 	uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(claimAddress);
+	// 	assertEq(amountAfter - amountBefore, withdrawableAmount);
+	// }
+
+	// function test_claimAndForward() public {
+	// 	address claimSwapForwardAddress = address(claimSwapForward);
+
+	// 	uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
+	// 	emit log_named_uint("withdrawableAmount", withdrawableAmount);
+	// 	uint256 amountBefore = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
+
+	// 	// Set allowance
+	// 	vm.startPrank(claimAddress);
+	// 	IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount);
+	// 	uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
+	// 		claimAddress,
+	// 		claimSwapForwardAddress
+	// 	);
+	// 	vm.stopPrank();
+
+	// 	assertEq(withdrawableAmount, allowanceAmount);
+
+	// 	claimSwapForward.claimAndForward(claimAddress);
+
+	// 	uint256 amountAfter = IERC20(gnoTokenAddress).balanceOf(destinationAddress);
+	// 	uint difference = amountAfter - amountBefore;
+	// 	assertEq(difference, withdrawableAmount);
+	// }
+
+	// function test_claimandSwap() public {
+	// 	address claimSwapForwardAddress = address(claimSwapForward);
+	// 	uint256 wxdaiAmountBefore = IERC20(wxdaiTokenAddress).balanceOf(claimSwapForwardAddress);
+	// 	uint256 eureAmountBefore = IERC20(eureTokenAddress).balanceOf(claimSwapForwardAddress);
+	// 	uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
+
+	// 	// Set allowance
+	// 	vm.startPrank(claimAddress);
+	// 	IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount);
+	// 	uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
+	// 		claimAddress,
+	// 		claimSwapForwardAddress
+	// 	);
+	// 	vm.stopPrank();
+
+	// 	assertEq(withdrawableAmount, allowanceAmount);
+
+	// 	emit log_named_uint("withdrawableAmount", withdrawableAmount);
+	// 	emit log_named_uint("allowanceAmount", allowanceAmount);
+
+	// 	uint256 gnoAmountBeforeReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress);
+	// 	claimSwapForward.claimWithdrawal(claimAddress);
+	// 	uint256 gnoAmountReceived = IERC20(gnoTokenAddress).balanceOf(claimAddress) -
+	// 		gnoAmountBeforeReceived;
+	// 	emit log_named_uint("gnoAmountReceived", gnoAmountReceived);
+	// 	vm.startPrank(claimSwapForwardAddress);
+	// 	IERC20(gnoTokenAddress).transferFrom(
+	// 		claimAddress,
+	// 		claimSwapForwardAddress,
+	// 		withdrawableAmount
+	// 	);
+	// 	vm.stopPrank();
+	// 	uint256 gnoAmountForwarded = IERC20(gnoTokenAddress).balanceOf(claimSwapForwardAddress);
+	// 	emit log_named_uint("gnoAmountForwarded", gnoAmountForwarded);
+	// 	assertEq(gnoAmountReceived, withdrawableAmount);
+
+	// 	claimSwapForward.balancerSwapGnoToWxdai(withdrawableAmount);
+
+	// 	uint256 wxdaiAmountAfter = IERC20(wxdaiTokenAddress).balanceOf(claimSwapForwardAddress);
+	// 	uint256 wxdaiDifference = wxdaiAmountAfter - wxdaiAmountBefore;
+	// 	emit log_named_uint("wxdaiAmountBefore", wxdaiAmountBefore);
+	// 	emit log_named_uint("wxdaiAmountAfter", wxdaiAmountAfter);
+	// 	emit log_named_uint("wxdaiDifference", wxdaiDifference);
+	// 	assert(wxdaiDifference > 0);
+
+	// 	claimSwapForward.curveSwapWxdaiEure(wxdaiDifference);
+	// 	uint256 eureAmountAfter = IERC20(eureTokenAddress).balanceOf(claimSwapForwardAddress);
+	// 	uint256 eureDifference = eureAmountAfter - eureAmountBefore;
+	// 	emit log_named_uint("eureAmountBefore", eureAmountBefore);
+	// 	emit log_named_uint("eureAmountAfter", eureAmountAfter);
+	// 	emit log_named_uint("eureDifference", eureDifference);
+	// 	assert(eureDifference > 0);
+	// }
 }
