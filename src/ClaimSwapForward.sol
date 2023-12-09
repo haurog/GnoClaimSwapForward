@@ -48,6 +48,10 @@ contract ClaimSwapForward is Ownable {
 			"No forwarding Address set for the claimAddress. Cannot forward the swapped funds."
 		);
 		require(
+			withdrawableAmount > 0,
+			"No Gno to claim. Revert."
+		);
+		require(
 			allowanceAmount >= withdrawableAmount,
 			"Approval amount too low, cannot transfer GNO to contract to do the swap."
 		);
