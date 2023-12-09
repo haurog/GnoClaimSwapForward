@@ -37,6 +37,9 @@ contract ClaimSwapForward is Ownable {
 	/// @param claimAddress address for which to claim .
 	function claimSwapAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
+		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(claimAddress, address(this));
+		require(allowanceAmount >= withdrawableAmount, "Approval amount too low, cannot transfer GNO to contract to do the swap." );
+
 		claimWithdrawal(claimAddress);
 		IERC20(gnoTokenAddress).transferFrom(claimAddress, address(this), withdrawableAmount);
 		balancerSwapGnoToWxdai(withdrawableAmount);

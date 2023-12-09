@@ -162,4 +162,23 @@ contract ClaimSwapForwardTest is Test {
 		emit log_named_uint("eureDifference", eureDifference);
 		assert(eureDifference > 0);
 	}
+
+		function test_claimSwapAndForwardRevert() public {
+		address claimSwapForwardAddress = address(claimSwapForward);
+
+		// Set allowance
+		vm.startPrank(claimAddress);
+		uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
+		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount-100);
+		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(
+			claimAddress,
+			claimSwapForwardAddress
+		);
+		vm.stopPrank();
+
+		assert(allowanceAmount < withdrawableAmount);
+
+		vm.expectRevert();
+		claimSwapForward.claimSwapAndForward(claimAddress);
+	}
 }
