@@ -28,6 +28,9 @@ contract ClaimSwapForward is Ownable {
 	bool public balancerSandwichPrevention = true; // enable/disable sandich prevention for the balancer step
 	uint256 public curveMaxDiff = 990; // = 0.990 =1 % difference between oracle price and received: Sandwich Prevention.
 
+	event ClaimSwapAndForwarded(uint256 gnoAmountIn, uint256 wxDaiAmountOut, address claimAddress, address destinationAddress);
+
+
 	constructor() Ownable(msg.sender) {}
 
 	/// @notice This is the main functionality. Which does everything (claim, swap and forward).
@@ -41,6 +44,7 @@ contract ClaimSwapForward is Ownable {
 		uint256 wxdaiAmount = IERC20(wxdaiTokenAddress).balanceOf(address(this));
 		curveSwapWxdaiEure(wxdaiAmount);
 		transferAllEureToDestination();
+		emit ClaimSwapAndForwarded(withdrawableAmount, wxdaiAmount,claimAddress, destinationAddress);
 	}
 
 	/// @notice Helper function to know how much GNO can be claimed for the claimAddress.
