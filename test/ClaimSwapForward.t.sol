@@ -63,6 +63,7 @@ contract ClaimSwapForwardTest is Test {
 			claimAddress,
 			claimSwapForwardAddress
 		);
+		claimSwapForward.setForwardingAddress(destinationAddress);
 		vm.stopPrank();
 
 		assertEq(withdrawableAmount, allowanceAmount);
@@ -76,7 +77,7 @@ contract ClaimSwapForwardTest is Test {
 		assert(eureDifference > 0);
 	}
 
-	function test_claimSwapAndForwardRevert() public {
+	function test_claimSwapAndForwardRevertAllowance() public {
 		address claimSwapForwardAddress = address(claimSwapForward);
 
 		// Set allowance
@@ -87,11 +88,25 @@ contract ClaimSwapForwardTest is Test {
 			claimAddress,
 			claimSwapForwardAddress
 		);
+		claimSwapForward.setForwardingAddress(destinationAddress);
 		vm.stopPrank();
 
 		assert(allowanceAmount < withdrawableAmount);
 
-		vm.expectRevert();
+		vm.expectRevert("Approval amount too low, cannot transfer GNO to contract to do the swap.");
+		claimSwapForward.claimSwapAndForward(claimAddress);
+	}
+
+	function test_claimSwapAndForwardRevertForwardingAddress() public {
+		address claimSwapForwardAddress = address(claimSwapForward);
+
+		// Set allowance
+		vm.startPrank(claimAddress);
+		uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
+		IERC20(gnoTokenAddress).approve(claimSwapForwardAddress, withdrawableAmount);
+		vm.stopPrank();
+
+		vm.expectRevert("No forwarding Address set for the claimAddress. Cannot forward the swapped funds.");
 		claimSwapForward.claimSwapAndForward(claimAddress);
 	}
 

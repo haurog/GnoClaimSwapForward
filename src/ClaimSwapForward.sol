@@ -23,7 +23,8 @@ contract ClaimSwapForward is Ownable {
 	address private gnoTokenAddress = 0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb;
 	address private wxdaiTokenAddress = 0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d;
 	address private eureTokenAddress = 0xcB444e90D8198415266c6a2724b7900fb12FC56E;
-	address private destinationAddress = 0xAeC36E243159FC601140Db90da6961133630f15D; // Gnosis pay wallet
+
+	mapping(address => address) forwardingAddresses;
 
 	bool public balancerSandwichPrevention = true; // enable/disable sandich prevention for the balancer step
 	uint256 public curveMaxDiff = 990; // = 0.990 =1 % difference between oracle price and received: Sandwich Prevention.
@@ -32,7 +33,7 @@ contract ClaimSwapForward is Ownable {
 		uint256 gnoAmountIn,
 		uint256 wxDaiAmountOut,
 		address claimAddress,
-		address destinationAddress
+		address forwardingAddress
 	);
 
 	constructor() Ownable(msg.sender) {}
@@ -42,6 +43,10 @@ contract ClaimSwapForward is Ownable {
 	function claimSwapAndForward(address claimAddress) public {
 		uint256 withdrawableAmount = getWithdrawableAmount(claimAddress);
 		uint256 allowanceAmount = IERC20(gnoTokenAddress).allowance(claimAddress, address(this));
+		require(
+			forwardingAddresses[claimAddress] != address(0),
+			"No forwarding Address set for the claimAddress. Cannot forward the swapped funds."
+		);
 		require(
 			allowanceAmount >= withdrawableAmount,
 			"Approval amount too low, cannot transfer GNO to contract to do the swap."
@@ -53,12 +58,12 @@ contract ClaimSwapForward is Ownable {
 
 		uint256 wxdaiAmount = IERC20(wxdaiTokenAddress).balanceOf(address(this));
 		curveSwapWxdaiEure(wxdaiAmount);
-		transferAllEureToDestination();
+		transferAllEureToDestination(forwardingAddresses[claimAddress]);
 		emit ClaimSwapAndForwarded(
 			withdrawableAmount,
 			wxdaiAmount,
 			claimAddress,
-			destinationAddress
+			forwardingAddresses[claimAddress]
 		);
 	}
 
@@ -69,6 +74,12 @@ contract ClaimSwapForward is Ownable {
 			gbcDepositContractAddress
 		);
 		return depositContractVariables.withdrawableAmount(claimAddress);
+	}
+
+	/// @notice Set and change the forwarding address.
+	/// @param forwardingAddress address to which to forward the funds to.
+	function setForwardingAddress(address forwardingAddress) public {
+		forwardingAddresses[msg.sender] = forwardingAddress;
 	}
 
 	/// @notice Enable/disable balancer sandwich prevention
@@ -166,8 +177,8 @@ contract ClaimSwapForward is Ownable {
 	}
 
 	/// @notice Transfer all the EURe in this contract to the destination address.
-	function transferAllEureToDestination() private {
+	function transferAllEureToDestination(address forwardingAddress) private {
 		uint256 amount = IERC20(eureTokenAddress).balanceOf(address(this));
-		IERC20(eureTokenAddress).transfer(destinationAddress, amount);
+		IERC20(eureTokenAddress).transfer(forwardingAddress, amount);
 	}
 }
