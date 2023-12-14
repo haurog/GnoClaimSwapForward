@@ -19,9 +19,14 @@ contract ClaimSwapForwardTest is Test {
 
 	function setUp() public {
 		// gnosisFork = vm.createFork("https://rpc.gnosis.gateway.fm");
-		gnosisFork = vm.createFork("http://192.168.1.125:8545");
+		gnosisFork = vm.createFork("http://192.168.1.123:8545");
 		vm.selectFork(gnosisFork);
 		claimSwapForward = new ClaimSwapForward();
+	}
+
+	function test_getWithdrawableAmount() public {
+		uint256 withdrawableAmount = claimSwapForward.getWithdrawableAmount(claimAddress);
+		emit log_named_uint("withdrawableAmount: ", withdrawableAmount);
 	}
 
 	function test_ownership() public {
