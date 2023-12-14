@@ -15,8 +15,6 @@ contract ClaimSwapForwardTest is Test {
 	address eureTokenAddress = 0xcB444e90D8198415266c6a2724b7900fb12FC56E;
 	address destinationAddress = 0xAeC36E243159FC601140Db90da6961133630f15D; // Gnosis pay wallet
 
-	address haurog = 0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1;
-
 	function setUp() public {
 		// gnosisFork = vm.createFork("https://rpc.gnosis.gateway.fm");
 		gnosisFork = vm.createFork("http://192.168.1.123:8545");
@@ -32,8 +30,8 @@ contract ClaimSwapForwardTest is Test {
 	function test_ownership() public {
 		emit log_named_address("owner: ", claimSwapForward.owner());
 		assertEq(claimSwapForward.owner(), 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
-		claimSwapForward.transferOwnership(haurog);
-		assertEq(claimSwapForward.owner(), haurog);
+		claimSwapForward.transferOwnership(claimAddress);
+		assertEq(claimSwapForward.owner(), claimAddress);
 	}
 
 	function test_sandwichPreventionParameters() public {
