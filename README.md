@@ -3,7 +3,7 @@
 This contract claims Gnosis staking rewards, swaps them for EURe and forwards them to a user selected address, like a gnosis pay wallet. The goal is to use this contract to automate this process using PowerPools and recharge the gnosis pay wallet regularly with staking gains. The contract uses balancer and curve to swap the claimed GNO to wxDAI and then the wxDAI to EURe. This route seems to be the cheapest and shortest from GNO-> EURe. The contract needs to be allowed to move GNO from the claimAddress.
 Deployed to: [0x3eAb5858ffe41BD352EeFaE4334e18B072c12757](https://gnosisscan.io/address/0x3eab5858ffe41bd352eefae4334e18b072c12757)
 
-## Details for Each Step
+## Details for Each Step in the Smart Contract
 
 The contract has several distinct steps. Here I explain each step and the approach I have taken. If any of the steps below fail, the transaction is reverted and it is as if nothing happened.
 
@@ -13,9 +13,9 @@ The contract has several distinct steps. Here I explain each step and the approa
 4. **Swap wxDAI to EURe**: Use curve to swap wxDAI to EURe using the [eureusd pool](https://curve.fi/#/xdai/pools/eureusd/deposit).
 5. **Forward**: Transfer the received EURe to the destination address stored in the smart contract.
 
-The smart contract is automatically executed at a regular interval (7 days) using PowerPools decentralized network of keepers.
+The choice of these two pools to swap the tokens is that the balancer one is not incentivized and still pretty large giving a good liquidity and probably better long term stability than highly incentivized pools. The curve pool gives extremely good liquidity and low fee. Overall a pure balancer path would have been more expensive than this mixed swap path. Manual tests over several weeks have shown that the chosen path beats a pure Balancer swap most of the time and is generally close to cowswaps swaps, but obviously never beating cowswap.
 
-The choice of these two pools to swap the tokens is that the balancer one is not incentivized and still pretty large giving a good liquidity and probably better long term stability than highly incentivized pools. The curve pool gives extremely good liquidity and low fee. Overall a pure balancer path would have been more expensive than this mixed swap path. Manual tests over several weeks have shown that the chosen path beats a pure Balancer swap most of the time and is generally close to cowswaps swaps, but obviously never beating them.
+For my own claims, I chose to execute the [transaction automatically](](https://app.powerpool.finance/#/gnosis/explorer/jobs/0x071412e301C2087A4DAA055CF4aFa2683cE1e499/0x483c7847f80a1cfdc701f74fbf8877ddf5c0d4e11f444772d4b44fee5e713b6d/)) at a regular interval (7 days) using PowerPools decentralized network of keepers.
 
 ## Possible Attack Vectors and Mitigations
 
@@ -24,7 +24,7 @@ Doing swaps in a smart contract opens one up to [sandwich attacks](https://www.c
 
 With curve the smart contract uses a different approach to prevent sandwiching. It reads an curve internal exponentially moving average price over previous blocks to determine the current EMA price. DOcumentation around this feature is rather thin and I stumbled upon it rather by chance. But the basic idea is if the EMA price differs more than 1% from the current price to the detriment of the smart contract the swap will fail. It is more robust than the balancer approach, but there were times with a high USD/EUR volatility which would have triggered this sandwich prevention mechanism without any sandwiching going on, especially around interest rate changes of central banks.
 
-These two sandwich prevention mechanisms have are contract owner configurable. THe balancer sandwich prevention is a boolean which can switch the mechanism on and off, whereas the curve one is a integer setting the maximum deviation between EMA price and current price. These are the only two contract owner only functions that exist in the contract.
+These two sandwich prevention mechanisms are contract owner configurable. The balancer sandwich prevention is a boolean which can switch the mechanism on and off, whereas the curve one is a integer setting the maximum deviation between EMA price and current price. These are the only two contract owner only functions that exist in the contract.
 
 ### Executing Transactions
 
