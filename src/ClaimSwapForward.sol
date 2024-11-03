@@ -110,7 +110,7 @@ contract ClaimSwapForward is Ownable {
 	function balancerSwapGnoToWxdai(uint256 gnoAmount) private {
 		address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 		Balancer vaultContract = Balancer(vaultAddress);
-		bytes32 poolId = 0xa99fd9950b5d5dceeaf4939e221dca8ca9b938ab000100000000000000000025;
+		bytes32 poolId = 0x8189c4c96826d016a99986394103dfa9ae41e7ee0002000000000000000000aa;
 
 		// Poor mans in-block sandwich prevention. If the pool has been touched in the same block, revert.
 		// There is about 1 balancer transaction per 100 blocks, so it has a 1% chance to give a false positive.
