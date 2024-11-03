@@ -1,7 +1,7 @@
 ## Claim Swap Forward on Gnosis chain
 
 This contract claims Gnosis staking rewards, swaps them for EURe and forwards them to a user selected address, like a gnosis pay wallet. The goal is to use this contract to automate this process using PowerPools and recharge the gnosis pay wallet regularly with staking gains. The contract uses balancer and curve to swap the claimed GNO to wxDAI and then the wxDAI to EURe. This route seems to be the cheapest and shortest from GNO-> EURe. The contract needs to be allowed to move GNO from the claimAddress.
-Deployed to: [0x3eAb5858ffe41BD352EeFaE4334e18B072c12757](https://gnosisscan.io/address/0x3eab5858ffe41bd352eefae4334e18b072c12757)
+Deployed to: [0xc0e69863c1da32450ad79cbfa93f6e9e696dd4d5](https://gnosisscan.io/address/0xc0e69863c1da32450ad79cbfa93f6e9e696dd4d5)
 
 ## Details for Each Step in the Smart Contract
 
@@ -38,8 +38,8 @@ This is connected to the discussion of sandwich attacks. A bad actor could relat
 
 This contract has obviously **not** been audited by any external party. The contract has been intentionally kept as simple and explicit (i.e. not gas optimized) as possible to make understanding it easier and reduce the surface area for any possible exploits. There is no web interface for this smart contract. You have to use gnosisscan. If you want to use it, do the following:
 
-1. Connect your withdrawal address to gnosisscan.io and register a forwarding address using ['setForwardingAddress'](https://gnosisscan.io/address/0x3eAb5858ffe41BD352EeFaE4334e18B072c12757#writeContract)
-2. Set a reasonable GNO token approval for the smart contract. Connect your withdrawal address to the [GNO contract](https://gnosisscan.io/address/0x9c58bacc331c9aa871afd802db6379a98e80cedb#writeProxyContract) on gnosisscan and set the approval to the following contract: 0x3eAb5858ffe41BD352EeFaE4334e18B072c12757
+1. Connect your withdrawal address to gnosisscan.io and register a forwarding address using ['setForwardingAddress'](https://gnosisscan.io/address/0xc0e69863c1da32450ad79cbfa93f6e9e696dd4d5#writeContract)
+2. Set a reasonable GNO token approval for the smart contract. Connect your withdrawal address to the [GNO contract](https://gnosisscan.io/address/0x9c58bacc331c9aa871afd802db6379a98e80cedb#writeProxyContract) on gnosisscan and set the approval to the following contract: 0xc0e69863c1da32450ad79cbfa93f6e9e696dd4d5
 3. Now you can initiate the claim, swap and forward transaction by calling the 'claimSwapForward' function with your withdrawal address as a function parameter. If you want to automate this, open the [Powerpool App](https://app.powerpool.finance/#/gnosis/ppv2/all-jobs) set up a job using PowerAgent. The [PowerPool documentation](https://docs.powerpool.finance/powerpool-and-poweragent-network/power-agent/user-guides/i-want-to-automate-my-tasks/job-registration-guide) or my [current job](https://app.powerpool.finance/#/gnosis/explorer/jobs/0x071412e301C2087A4DAA055CF4aFa2683cE1e499/0x483c7847f80a1cfdc701f74fbf8877ddf5c0d4e11f444772d4b44fee5e713b6d/) can be guide how to set it up yourself.
 
 
@@ -79,7 +79,7 @@ forge verify-contract \
     --watch \
     --etherscan-api-key ETHERSCAN_API_KEY \
     --compiler-version v0.8.21 \
-     0x3eAb5858ffe41BD352EeFaE4334e18B072c12757 \
+     0xc0e69863c1da32450ad79cbfa93f6e9e696dd4d5 \
     src/ClaimSwapForward.sol:ClaimSwapForward
 ```
 
