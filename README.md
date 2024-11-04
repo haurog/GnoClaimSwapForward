@@ -78,10 +78,17 @@ forge verify-contract \
     --chain-id 100 \
     --watch \
     --etherscan-api-key ETHERSCAN_API_KEY \
-    --compiler-version v0.8.21 \
+    --compiler-version v0.8.24 \
      0xc0e69863c1da32450ad79cbfa93f6e9e696dd4d5 \
     src/ClaimSwapForward.sol:ClaimSwapForward
 ```
+
+### Get the ABI
+
+```
+jq '.abi' ./out/ClaimSwapForward.sol/ClaimSwapForward.json
+```
+
 
 ### Help
 
